@@ -1,25 +1,26 @@
-// models
 const mongoose = require('mongoose');
-const studentSchema = new mongoose.Schema({
-    name: String,
-    studentId: { type: String, unique: true },
-    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher' }
-});
-const teacherSchema = new mongoose.Schema({
-    teacherName: String,
-    subject: String,
-    students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Student' }]
-});
 
-const attendanceSchema = new mongoose.Schema({
-    studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
-    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher' },
-    date: { type: Date, default: Date.now },
-    status: String
+const studentSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    studentId: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+    class: {
+        type: String,
+        required: true,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
 });
 
 const Student = mongoose.model('Student', studentSchema);
-const Teacher = mongoose.model('Teacher', teacherSchema);
-const Attendance = mongoose.model('Attendance', attendanceSchema);
 
-module.exports = { Student, Teacher, Attendance };
+module.exports = Student;
