@@ -1,88 +1,64 @@
-// controllers/attendanceController.js
+const { Student } = require('../models');
 
-const { Student, Teacher, Attendance } = require('../models');
-
-// Check if a student has attended a specific teacher's class today
-async function checkAttendance(req, res) {
+// Create a new student
+async function createStudent(req, res) {
     try {
-        const { studentId, teacherName } = req.body;
+        const { name, studentId, class: studentClass } = req.body;
 
-        if (!studentId || !teacherName) {
-            return res.status(400).json({ error: 'Missing required fields: studentId or teacherName' });
+        if (!name || !studentId || !studentClass) {
+            return res.status(400).json({ error: 'Missing required fields: name, studentId, or class.' });
         }
 
-        const student = await Student.findOne({ studentId });
-        if (!student) return res.status(404).json({ error: 'Student not found' });
-
-        const teacher = await Teacher.findOne({ teacherName });
-        if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const attendance = await Attendance.findOne({
-            studentId: student._id,
-            teacherId: teacher._id,
-            date: { $gte: today }
+        const newStudent = new Student({
+            name,
+            studentId,
+            class: studentClass,
         });
 
-        if (!attendance) {
-            return res.status(200).json({ message: `${student.name} has not attended ${teacher.teacherName}'s class today.` });
-        }
-        
-        return res.status(200).json({ message: `${student.name} has already attended ${teacher.teacherName}'s class today.` });
-
+        await newStudent.save();
+        res.status(201).json({ message: 'Student created successfully!', student: newStudent });
     } catch (error) {
-        res.status(500).json({ error: 'Server Error' });
+        res.status(500).json({ error: 'Failed to create student.', details: error.message });
     }
 }
 
-// Mark attendance for a student under a specific teacher
-async function markAttendance(req, res) {
+// Edit an existing student
+async function editStudent(req, res) {
     try {
-        const { studentId, teacherName, status } = req.body;
+        const { id } = req.params; // Get student ID from URL
+        const updates = req.body; // Get fields to update
 
-        if (!studentId || !teacherName || !status) {
-            return res.status(400).json({ error: 'Missing required fields: studentId, teacherName, or status' });
+        const updatedStudent = await Student.findByIdAndUpdate(id, updates, { new: true });
+
+        if (!updatedStudent) {
+            return res.status(404).json({ error: 'Student not found.' });
         }
 
-        const student = await Student.findOne({ studentId });
-        if (!student) return res.status(404).json({ error: 'Student not found' });
-
-        const teacher = await Teacher.findOne({ teacherName });
-        if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
-
-        const attendance = new Attendance({
-            studentId: student._id,
-            teacherId: teacher._id,
-            status
-        });
-
-        await attendance.save();
-        res.status(201).json({ message: 'Attendance marked successfully.' });
-
+        res.status(200).json({ message: 'Student updated successfully!', student: updatedStudent });
     } catch (error) {
-        res.status(500).json({ error: 'Server Error' });
+        res.status(500).json({ error: 'Failed to update student.', details: error.message });
     }
 }
 
-// List all students assigned to a specific teacher
-async function listStudentsByTeacher(req, res) {
+// Delete a student
+async function deleteStudent(req, res) {
     try {
-        const { teacherName } = req.params;
+        const { id } = req.params;
 
-        const teacher = await Teacher.findOne({ teacherName }).populate('students');
-        if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
+        const deletedStudent = await Student.findByIdAndDelete(id);
 
-        res.status(200).json({ students: teacher.students });
+        if (!deletedStudent) {
+            return res.status(404).json({ error: 'Student not found.' });
+        }
 
+        res.status(200).json({ message: 'Student deleted successfully!', student: deletedStudent });
     } catch (error) {
-        res.status(500).json({ error: 'Server Error' });
+        res.status(500).json({ error: 'Failed to delete student.', details: error.message });
     }
 }
 
 module.exports = {
-    checkAttendance,
-    markAttendance,
-    listStudentsByTeacher
+    createStudent,
+    editStudent,
+    deleteStudent,
 };
